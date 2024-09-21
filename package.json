@@ -10,12 +10,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.6.0",
+    "classnames": "^2.5.1",
+    "jwt-decode": "^4.0.0",
     "react": "^18.3.1",
     "react-cookie": "^7.2.0",
     "react-dom": "^18.3.1",
     "react-quill": "^2.0.0",
     "react-router-dom": "^6.26.1",
-    "react-tailwindcss-datepicker": "^1.7.2"
+    "react-tailwindcss-datepicker": "^1.7.2",
+    "react-toastify": "^10.0.5",
+    "tailwind-scrollbar": "^3.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",

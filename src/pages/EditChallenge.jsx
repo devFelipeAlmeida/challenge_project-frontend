@@ -3,11 +3,11 @@ import Button from "../elements/Button";
 import Datepicker from "react-tailwindcss-datepicker";
 import ReactQuill from "react-quill";
 import EditorToolbar, { modules, formats } from "../components/EditorToolbar";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import "react-quill/dist/quill.snow.css";
-import { addChallenge } from "../api/challenges";
+import { getChallengesById, updateChallenge } from "../api/challenges";
 import { useCookies } from "react-cookie";
-import { fetchUsers as fetchUsersApi } from "../api/authentication";
+import { toast } from 'react-toastify';
 
 const initialErrorsState = {
   title: "",
@@ -16,7 +16,7 @@ const initialErrorsState = {
   api: "",
 };
 
-function AddChallenge() {
+function EditChallenge() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [value, setValue] = useState({
@@ -25,17 +25,31 @@ function AddChallenge() {
   });
   const [errors, setErrors] = useState(initialErrorsState);
   const [cookies] = useCookies([]);
-  const [users, setUsers] = useState([]);
-  const [selectedUser, setSelectedUser] = useState("");
   const navigate = useNavigate();
+  const { id } = useParams(); 
 
   useEffect(() => {
     if (!cookies.jwt) {
       navigate("/");
     } else {
-      fetchUsers(); // Buscar usuários quando o componente for montado
+      fetchChallenge();
     }
-  }, [cookies.jwt, navigate]);
+  }, [cookies.jwt, navigate, id]);
+
+  const fetchChallenge = async () => {
+    const [result, error] = await getChallengesById(cookies.jwt, id);
+    if (!error) {
+      const challenge = await result.json();
+      setTitle(challenge.data.title);
+      setDescription(challenge.data.description);
+      setValue({
+        startDate: challenge.data.start_date,
+        endDate: challenge.data.end_date,
+      });
+    } else {
+      console.error("Failed to fetch challenge:", error);
+    }
+  };
 
   const handleTitleChange = (e) => {
     setTitle(e.target.value);
@@ -45,13 +59,13 @@ function AddChallenge() {
     setDescription(e);
   };
 
-  const handleValueChange = (newValue) => {
-    setValue(newValue);
-  };
 
-  const handleUserChange = (e) => {
-    setSelectedUser(e.target.value); // Atualiza o usuário selecionado
-  };
+const handleValueChange = (newValue) => {
+  setValue((prevValue) => ({
+    ...prevValue,
+    ...newValue,
+  }));
+};
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -85,49 +99,38 @@ function AddChallenge() {
       return;
     }
 
-    addChallengeApi();
+    updateChallengeApi();
   };
 
-  const fetchUsers = async () => {
-    const [data, error] = await fetchUsersApi(cookies.jwt); // Passa o JWT como argumento
-
-    if (error) {
-      setErrors((prev) => ({
-        ...prev,
-        api: error,
-      }));
-    } else {
-      setUsers(data); // Atualiza o estado com a lista de usuários
-    }
-  };
-
-  const addChallengeApi = async () => {
-    const [result, error] = await addChallenge(cookies.jwt, {
+  const updateChallengeApi = async () => {
+    const [result, error] = await updateChallenge(cookies.jwt, id, {
       challenge: {
         title: title,
         description: description,
         start_date: value.startDate,
         end_date: value.endDate,
-        user_id: selectedUser,
       },
     });
+
     handleResponse([result, error]);
   };
 
-  const handleResponse = async ([response, error]) => {
+  const handleResponse = ([response, error]) => {
     if (error) {
       setErrors({
         ...errors,
         api: error,
       });
+      toast.error("Update failed: Please try again.");
     } else {
-      navigate("/");
+      navigate("/manage-challenges");
+      toast.success("Update successful!");
     }
   };
 
   return (
     <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-4xl">Add Challenge</h1>
+      <h1 className="text-4xl">Edit Challenge</h1>
       <form onSubmit={handleSubmit} className="mt-10 flex flex-col gap-8">
         <input
           name="title"
@@ -175,20 +178,7 @@ function AddChallenge() {
           <p className="text-sm text-medium text-red-500 mt-1">{errors.date}</p>
         )}
 
-        <select
-          value={selectedUser}
-          onChange={handleUserChange}
-          className="py-2 w-full border border-gray-600 rounded px-3"
-        >
-          <option value="">Select User</option>
-          {users.map((user) => (
-            <option key={user.id} value={user.id}>
-              {user.email} {/* Ou use user.name se for mais apropriado */}
-            </option>
-          ))}
-        </select>
-
-        <Button type="submit">Add Challenge</Button>
+        <Button type="submit">Update Challenge</Button>
         {errors.api && (
           <p className="text-sm text-medium text-red-500 mt-1">{errors.api}</p>
         )}
@@ -197,4 +187,4 @@ function AddChallenge() {
   );
 }
 
-export default AddChallenge;
+export default EditChallenge;

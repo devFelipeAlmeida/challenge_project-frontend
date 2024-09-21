@@ -6,3 +6,9 @@
 .ql-editor {
     @apply h-72 !important
 }
+
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: 0;
+}
